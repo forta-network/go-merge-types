@@ -1,0 +1,24 @@
+sources:
+  - type: Impl1
+    tag: v0.0.1
+    package:
+      importPath: github.com/forta-network/go-merge-types/example/pkg1
+      alias: pkg1
+      sourceDir: ./pkg1
+  - type: Impl2
+    tag: v0.0.2
+    package:
+      importPath: github.com/forta-network/go-merge-types/example/pkg2
+      #alias: pkg2
+      sourceDir: ./pkg2
+  - type: Impl3
+    tag: v0.0.3
+    package:
+      importPath: github.com/forta-network/go-merge-types/example/pkg3
+      alias: pkg3
+      sourceDir: ./pkg3
+
+output:
+  type: Impl
+  package: outpkg
+  file: ./outpkg/out.go
