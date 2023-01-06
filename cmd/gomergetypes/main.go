@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"path"
 
 	"github.com/forta-network/go-merge-types"
+	"github.com/forta-network/go-merge-types/utils"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var mainCmd = &cobra.Command{
@@ -25,22 +24,7 @@ var (
 )
 
 func handleMain(cmd *cobra.Command, args []string) {
-	b, err := os.ReadFile(*flagConfigPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var config merge.MergeConfig
-	if err := yaml.Unmarshal(b, &config); err != nil {
-		log.Fatal(err)
-	}
-
-	// fix package source dirs relative to the config path
-	for _, source := range config.Sources {
-		source.Package.SourceDir = relativePath(source.Package.SourceDir)
-	}
-
-	b, err = merge.Generate(&config)
+	config, b, err := merge.Run(*flagConfigPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +33,7 @@ func handleMain(cmd *cobra.Command, args []string) {
 		fmt.Println(string(b))
 	}
 
-	if err := ioutil.WriteFile(relativePath(config.Output.File), b, 0755); err != nil {
+	if err := ioutil.WriteFile(utils.RelativePath(*flagConfigPath, config.Output.File), b, 0755); err != nil {
 		log.Fatal(err)
 	}
 }

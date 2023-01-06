@@ -8,10 +8,38 @@ import (
 	"go/token"
 	"go/types"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 	"text/template"
+
+	"github.com/forta-network/go-merge-types/utils"
+	"gopkg.in/yaml.v3"
 )
+
+func Run(configPath string) (*MergeConfig, []byte, error) {
+	b, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var config MergeConfig
+	if err := yaml.Unmarshal(b, &config); err != nil {
+		return &config, nil, err
+	}
+
+	// fix package source dirs relative to the config path
+	for _, source := range config.Sources {
+		source.Package.SourceDir = utils.RelativePath(configPath, source.Package.SourceDir)
+	}
+
+	b, err = Generate(&config)
+	if err != nil {
+		return &config, nil, err
+	}
+
+	return &config, b, nil
+}
 
 func Generate(config *MergeConfig) ([]byte, error) {
 	var pkgs []*ast.Package
