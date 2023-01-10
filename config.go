@@ -1,5 +1,9 @@
 package merge
 
+import (
+	"github.com/forta-network/go-merge-types/rewrite"
+)
+
 type MergeConfig struct {
 	Sources []*Source `yaml:"sources"`
 	Output  Output    `yaml:"output"`
@@ -19,9 +23,11 @@ type Package struct {
 }
 
 type Output struct {
-	Type    string `yaml:"type"`
-	Package string `yaml:"package"`
-	File    string `yaml:"file"`
+	Type       string           `yaml:"type"`
+	Package    string           `yaml:"package"`
+	File       string           `yaml:"file"`
+	Rewrite    rewrite.Rewriter `yaml:"rewrite"`
+	DefaultTag string           `yaml:"defaultTag"`
 
 	InitArgs []*Field  `yaml:"-"`
 	Methods  []*Method `yaml:"-"`
@@ -40,13 +46,16 @@ type ReturnType struct {
 }
 
 type Method struct {
-	Name       string
-	Variations []*Variation
-	Args       []*Field
-	ReturnType ReturnType
+	Name         string
+	Variations   []*Variation
+	Args         []*Field
+	ReturnType   ReturnType
+	NoReturn     bool
+	SingleReturn bool
 }
 
 type Variation struct {
+	Name                string
 	SourceIndex         int
 	Tag                 string
 	Args                []*Field

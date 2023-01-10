@@ -20,5 +20,9 @@ sources:
 
 output:
   type: Impl
+  defaultTag: v0.0.3
   package: outpkg
   file: ./outpkg/out.go
+  rewrite:
+    - match: ^Foo([a-zA-Z]+)BazOutput$
+      transform: One$Two

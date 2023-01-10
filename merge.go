@@ -209,6 +209,7 @@ func mergeAndGenerate(config *MergeConfig, sourceImpls []*SourceImplementation) 
 			variation.SourceIndex = i
 			variation.Tag = config.Sources[i].Tag
 			methodName := sourceMethod.Name.Name
+			variation.Name = methodName
 
 			// find out variation method return type
 
@@ -297,12 +298,22 @@ func mergeAndGenerate(config *MergeConfig, sourceImpls []*SourceImplementation) 
 					log.Fatalf("local type not found: %s", typeString(pkgName, "", ret.Type))
 				}
 				if structType, ok := localType.Type.(*ast.StructType); ok {
-					variation.MergeReturnedStruct = true
-					for _, param := range structType.Fields.List {
+					if !hasUnexportedField(structType.Fields.List) {
+						// local struct with exported fields
+						variation.MergeReturnedStruct = true
+						for _, param := range structType.Fields.List {
+							variation.ReturnedFields = append(variation.ReturnedFields, &Field{
+								SourceIndex: i,
+								Name:        param.Names[0].Name,
+								Type:        typeString("", pkgName, param.Type),
+							})
+						}
+					} else {
+						// local struct with unexported fields
 						variation.ReturnedFields = append(variation.ReturnedFields, &Field{
 							SourceIndex: i,
-							Name:        param.Names[0].Name,
-							Type:        typeString("", pkgName, param.Type),
+							Name:        pkgNameToMethodPrefix(pkgName) + "Result",
+							Type:        typeString("", pkgName, ret.Type),
 						})
 					}
 				}
@@ -317,7 +328,7 @@ func mergeAndGenerate(config *MergeConfig, sourceImpls []*SourceImplementation) 
 				}
 				variation.ReturnedFields = append(variation.ReturnedFields, &Field{
 					SourceIndex: i,
-					Name:        strings.Title(methodName) + "Result",
+					Name:        "Value",
 					Type:        retType,
 				})
 			}
@@ -333,6 +344,15 @@ func mergeAndGenerate(config *MergeConfig, sourceImpls []*SourceImplementation) 
 
 			// merge return fields
 			method.ReturnType.Fields = mergeFields(variation.ReturnedFields, method.ReturnType.Fields)
+		}
+
+		// decide on return value
+		switch len(method.ReturnType.Fields) {
+		case 0:
+			method.NoReturn = true
+		case 1:
+			method.SingleReturn = true
+			method.ReturnType.Name = method.ReturnType.Fields[0].Type
 		}
 	}
 
@@ -365,6 +385,25 @@ func mergeAndGenerate(config *MergeConfig, sourceImpls []*SourceImplementation) 
 
 	// set all methods in the config
 	config.Output.Methods = allMethods
+
+	// rewrite some names: constructor (init) args, method names, method inputs, method outputs
+	rewriter := config.Output.Rewrite
+	for _, initArg := range config.Output.InitArgs {
+		initArg.Name = rewriter.Rewrite(initArg.Name)
+		initArg.Type = rewriter.Rewrite(initArg.Type)
+	}
+	for _, method := range config.Output.Methods {
+		method.Name = rewriter.Rewrite(method.Name)
+		for _, arg := range method.Args {
+			arg.Name = rewriter.Rewrite(arg.Name)
+			arg.Type = rewriter.Rewrite(arg.Type)
+		}
+		method.ReturnType.Name = rewriter.Rewrite(method.ReturnType.Name)
+		for _, field := range method.ReturnType.Fields {
+			field.Name = rewriter.Rewrite(field.Name)
+			field.Type = rewriter.Rewrite(field.Type)
+		}
+	}
 
 	// finally, execute the config on the template and return
 	buffer := new(bytes.Buffer)
@@ -429,6 +468,26 @@ func typeString(name string, pkgName string, expr ast.Expr) string {
 	case *ast.SelectorExpr:
 		return name + typeString("", pkgName, t.X) + "." + t.Sel.Name
 
+	case *ast.ArrayType:
+		ret := name + "["
+		if t.Len != nil {
+			ret += types.ExprString(t.Len)
+		}
+		return ret + "]" + typeString("", pkgName, t.Elt)
+
+	case *ast.ChanType:
+		chanStr := "chan"
+		switch t.Dir {
+		case ast.SEND:
+			chanStr += "<-"
+		case ast.RECV:
+			chanStr = "<-" + chanStr
+		}
+		return name + chanStr + " " + typeString("", pkgName, t.Value)
+
+	case *ast.MapType:
+		return fmt.Sprintf("map[%s]%s", typeString("", pkgName, t.Key), typeString("", pkgName, t.Value))
+
 	default:
 		return name + types.ExprString(expr)
 	}
@@ -489,4 +548,22 @@ func mergeImport(imp string, imports []string) []string {
 	}
 	imports = append(imports, imp)
 	return imports
+}
+
+func hasUnexportedField(fields []*ast.Field) bool {
+	for _, field := range fields {
+		firstLetter := string(field.Names[0].Name[0])
+		if strings.ToLower(firstLetter) == string(firstLetter) {
+			return true
+		}
+	}
+	return false
+}
+
+func pkgNameToMethodPrefix(pkgName string) string {
+	parts := strings.Split(pkgName, "_")
+	for i, part := range parts {
+		parts[i] = strings.Title(part)
+	}
+	return strings.Join(parts, "")
 }

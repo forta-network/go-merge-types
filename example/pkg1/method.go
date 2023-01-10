@@ -12,3 +12,7 @@ func (impl *Impl1) Foo(arg1 string) (*Result1, error) {
 }
 
 func (impl *Impl1) Bar(arg1 chan *string) {}
+
+func (impl *Impl1) SingleReturnVal() (int, error) {
+	return 0, nil
+}

@@ -3,42 +3,38 @@
 package outpkg
 
 import (
-	"fmt"
-	"errors"
+	import_fmt "fmt"
+	import_sync "sync"
 
-	
+
 	pkg1 "github.com/forta-network/go-merge-types/example/pkg1"
-	
+
 	pkg2_2 "github.com/forta-network/go-merge-types/example/pkg2"
-	
+
 	pkg3 "github.com/forta-network/go-merge-types/example/pkg3"
-	
 
-	
+
+
 	biggie "math/big"
-	
-	"math/big"
-	
-	"sync"
-	
-)
 
-// Errors
-var (
-	ErrTagUnset       = errors.New("implementation tag is not set - please set it with Use() method before calling any methods")
-	ErrNotImplemented = errors.New("method not implemented by source")
+	"math/big"
+
+	"sync"
+
 )
 
 // Impl is a new type which can multiplex calls to different implementation types.
 type Impl struct {
-	
+
 	typ0 *pkg1.Impl1
-	
+
 	typ1 *pkg2_2.Impl2
-	
+
 	typ2 *pkg3.Impl3
-	
+
 	currTag string
+	mu import_sync.RWMutex
+	unsafe bool // default: false
 }
 
 // NewImpl creates a new merged type.
@@ -47,134 +43,365 @@ func NewImpl(arg1 string, arg2 int, arg2Alt1 int64, arg3 *sync.WaitGroup, arg4 *
 		mergedType Impl
 		err error
 	)
+	mergedType.currTag = "v0.0.3"
 
-	
+
 	mergedType.typ0, err = pkg1.NewImpl1(arg1, arg2)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize pkg1.Impl1: %v", err)
+		return nil, import_fmt.Errorf("failed to initialize pkg1.Impl1: %v", err)
 	}
-	
+
 	mergedType.typ1, err = pkg2_2.NewImpl2(arg2Alt1)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize pkg2_2.Impl2: %v", err)
+		return nil, import_fmt.Errorf("failed to initialize pkg2_2.Impl2: %v", err)
 	}
-	
+
 	mergedType.typ2, err = pkg3.NewImpl3(arg2, arg3, arg4)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize pkg3.Impl3: %v", err)
+		return nil, import_fmt.Errorf("failed to initialize pkg3.Impl3: %v", err)
 	}
-	
+
 
 	return &mergedType, nil
 }
 
 // Use sets the used implementation to given tag.
-func (merged *Impl) Use(tag string) {
+func (merged *Impl) Use(tag string) (changed bool) {
+	if !merged.unsafe {
+		merged.mu.Lock()
+		defer merged.mu.Unlock()
+	}
+	changed = merged.currTag != tag
 	merged.currTag = tag
+	return
 }
+
+// Unsafe disables the mutex.
+func (merged *Impl) Unsafe() {
+	merged.unsafe = true
+}
+
+// Safe enables the mutex.
+func (merged *Impl) Safe() {
+	merged.unsafe = false
+}
+
 
 
 // FooOutput is a merged return type.
 type FooOutput struct {
-	
+
 	A string
-	
+
 	B float32
-	
-	FooResult *pkg2_2.Int
-	
-	FooResultAlt3 *big.Int
-	
+
+	Value *pkg2_2.Int
+
+	ValueAlt3 *big.Int
+
 }
-
-// BarOutput is a merged return type.
-type BarOutput struct {
-	
-}
-
-
 
 // Foo multiplexes to different implementations of the method.
-func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3Alt2 *biggie.Int) (*FooOutput, error) {
-	if merged.currTag == "" {
-		return nil, ErrTagUnset
+func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3Alt2 *biggie.Int) (retVal *FooOutput, err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
 	}
 
-	var retVal FooOutput
 
-	
+	retVal = &FooOutput{}
+
+
+
 	if merged.currTag == "v0.0.1" {
-		val, err := merged.typ0.Foo(arg1)
-		
-		if err != nil {
-			return nil, err
-		}
-		
-		
-		retVal.A = val.A
-		
-		retVal.B = val.B
-		
-		return &retVal, nil
-	}
-	
-	if merged.currTag == "v0.0.2" {
-		val, err := merged.typ1.Foo(arg1, arg2, arg3)
-		
-		if err != nil {
-			return nil, err
-		}
-		
-		
-		retVal.FooResult = val
-		
-		return &retVal, nil
-	}
-	
-	if merged.currTag == "v0.0.3" {
-		val, err := merged.typ2.Foo(arg2, arg3Alt2)
-		
-		if err != nil {
-			return nil, err
-		}
-		
-		
-		retVal.FooResultAlt3 = val
-		
-		return &retVal, nil
-	}
-	
+	val, methodErr := merged.typ0.Foo(arg1)
 
-	return nil, fmt.Errorf("%w (tag=%s)", ErrNotImplemented, merged.currTag)
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+		retVal.A = val.A
+
+		retVal.B = val.B
+
+
+		return
+	}
+
+	if merged.currTag == "v0.0.2" {
+	val, methodErr := merged.typ1.Foo(arg1, arg2, arg3)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+		retVal.Value = val
+
+
+		return
+	}
+
+	if merged.currTag == "v0.0.3" {
+	val, methodErr := merged.typ2.Foo(arg2, arg3Alt2)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+		retVal.ValueAlt3 = val
+
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.Foo not implemented (tag=%s)", merged.currTag)
+	return
 }
 
+
+
 // Bar multiplexes to different implementations of the method.
-func (merged *Impl) Bar(arg1 chan *string, arg1Alt4 map[string]interface{}) (*BarOutput, error) {
-	if merged.currTag == "" {
-		return nil, ErrTagUnset
+func (merged *Impl) Bar(arg1 chan *string, arg1Alt4 map[string]interface{}) (err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
 	}
 
-	var retVal BarOutput
 
-	
+
+
 	if merged.currTag == "v0.0.1" {
-		merged.typ0.Bar(arg1)
-		
-		
-		return &retVal, nil
-	}
-	
-	if merged.currTag == "v0.0.3" {
-		err := merged.typ2.Bar(arg1Alt4)
-		
-		if err != nil {
-			return nil, err
-		}
-		
-		
-		return &retVal, nil
-	}
-	
+	merged.typ0.Bar(arg1)
 
-	return nil, fmt.Errorf("%w (tag=%s)", ErrNotImplemented, merged.currTag)
+
+
+
+		return
+	}
+
+	if merged.currTag == "v0.0.3" {
+	methodErr := merged.typ2.Bar(arg1Alt4)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.Bar not implemented (tag=%s)", merged.currTag)
+	return
+}
+
+
+
+// SingleReturnVal multiplexes to different implementations of the method.
+func (merged *Impl) SingleReturnVal(arg string) (retVal int, err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
+	}
+
+
+
+
+	if merged.currTag == "v0.0.1" {
+	val, methodErr := merged.typ0.SingleReturnVal()
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+		retVal = val
+
+		return
+	}
+
+	if merged.currTag == "v0.0.2" {
+	val, methodErr := merged.typ1.SingleReturnVal(arg)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+		retVal = val
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.SingleReturnVal not implemented (tag=%s)", merged.currTag)
+	return
+}
+
+
+
+// NoReturnVal multiplexes to different implementations of the method.
+func (merged *Impl) NoReturnVal(arg int) (err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
+	}
+
+
+
+
+	if merged.currTag == "v0.0.2" {
+	methodErr := merged.typ1.NoReturnVal()
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+
+		return
+	}
+
+	if merged.currTag == "v0.0.3" {
+	methodErr := merged.typ2.NoReturnVal(arg)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.NoReturnVal not implemented (tag=%s)", merged.currTag)
+	return
+}
+
+
+
+// ArrayMethod multiplexes to different implementations of the method.
+func (merged *Impl) ArrayMethod(sli []*pkg3.Something, arr [32]*pkg3.Something) (err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
+	}
+
+
+
+
+	if merged.currTag == "v0.0.3" {
+	methodErr := merged.typ2.ArrayMethod(sli, arr)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.ArrayMethod not implemented (tag=%s)", merged.currTag)
+	return
+}
+
+
+
+// ChanMethod multiplexes to different implementations of the method.
+func (merged *Impl) ChanMethod(chan1 chan *pkg3.Something, chan2 <-chan *pkg3.Something, chan3 chan<- *pkg3.Something) (err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
+	}
+
+
+
+
+	if merged.currTag == "v0.0.3" {
+	methodErr := merged.typ2.ChanMethod(chan1, chan2, chan3)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.ChanMethod not implemented (tag=%s)", merged.currTag)
+	return
+}
+
+
+
+// MapMethod multiplexes to different implementations of the method.
+func (merged *Impl) MapMethod(m map[string]*pkg3.Something) (err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
+	}
+
+
+
+
+	if merged.currTag == "v0.0.3" {
+	methodErr := merged.typ2.MapMethod(m)
+
+		if err != nil {
+			err = methodErr
+			return
+		}
+
+
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.MapMethod not implemented (tag=%s)", merged.currTag)
+	return
+}
+
+
+
+// FooBarBaz multiplexes to different implementations of the method.
+func (merged *Impl) FooBarBaz() (err error) {
+	if !merged.unsafe {
+		merged.mu.RLock()
+		defer merged.mu.RUnlock()
+	}
+
+
+
+
+	if merged.currTag == "v0.0.3" {
+	merged.typ2.FooBarBaz()
+
+
+
+
+		return
+	}
+
+
+	err = import_fmt.Errorf("Impl.FooBarBaz not implemented (tag=%s)", merged.currTag)
+	return
 }
