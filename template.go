@@ -46,11 +46,25 @@ func New{{.Output.Type}}({{range $index, $arg := .Output.InitArgs}}{{if eq $inde
 	return &mergedType, nil
 }
 
+// IsKnownTag tells if given tag is a known tag.
+func IsKnownTag(tag string) bool {
+{{range $tag := .Output.KnownTags}}
+	if tag == "{{$tag}}" {
+		return true
+	}
+{{end}}
+	return false
+}
+
 // Use sets the used implementation to given tag.
 func (merged *{{.Output.Type}}) Use(tag string) (changed bool) {
 	if !merged.unsafe {
 		merged.mu.Lock()
 		defer merged.mu.Unlock()
+	}
+	// use the default tag if the provided tag is unknown
+	if !IsKnownTag(tag) {
+		tag = "{{.Output.DefaultTag}}"
 	}
 	changed = merged.currTag != tag
 	merged.currTag = tag
@@ -89,7 +103,7 @@ func (merged *{{$.Output.Type}}) {{$method.Name}}({{range $index, $arg := $metho
 
 {{range $variation := $method.Variations}}
 	if merged.currTag == "{{$variation.Tag}}" {
-	{{if $variation.NoReturn}}{{else}}{{if $variation.OnlyError}}methodErr := {{else}}val, methodErr := {{end}}{{end}}merged.typ{{$variation.SourceIndex}}.{{$variation.Name}}({{range $index, $arg := $variation.Args}}{{if eq $index 0}}{{else}}, {{end}}{{$arg.Name}}{{end}})
+		{{if $variation.NoReturn}}{{else}}{{if $variation.OnlyError}}methodErr := {{else}}val, methodErr := {{end}}{{end}}merged.typ{{$variation.SourceIndex}}.{{$variation.Name}}({{range $index, $arg := $variation.Args}}{{if eq $index 0}}{{else}}, {{end}}{{$arg.Name}}{{end}})
 {{if eq $variation.NoReturn false}}
 		if err != nil {
 			err = methodErr

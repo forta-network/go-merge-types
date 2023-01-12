@@ -65,11 +65,33 @@ func NewImpl(arg1 string, arg2 int, arg2Alt1 int64, arg3 *sync.WaitGroup, arg4 *
 	return &mergedType, nil
 }
 
+// IsKnownTag tells if given tag is a known tag.
+func IsKnownTag(tag string) bool {
+
+	if tag == "v0.0.1" {
+		return true
+	}
+
+	if tag == "v0.0.2" {
+		return true
+	}
+
+	if tag == "v0.0.3" {
+		return true
+	}
+
+	return false
+}
+
 // Use sets the used implementation to given tag.
 func (merged *Impl) Use(tag string) (changed bool) {
 	if !merged.unsafe {
 		merged.mu.Lock()
 		defer merged.mu.Unlock()
+	}
+	// use the default tag if the provided tag is unknown
+	if !IsKnownTag(tag) {
+		tag = "v0.0.3"
 	}
 	changed = merged.currTag != tag
 	merged.currTag = tag
@@ -114,7 +136,7 @@ func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3
 
 
 	if merged.currTag == "v0.0.1" {
-	val, methodErr := merged.typ0.Foo(arg1)
+		val, methodErr := merged.typ0.Foo(arg1)
 
 		if err != nil {
 			err = methodErr
@@ -131,7 +153,7 @@ func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3
 	}
 
 	if merged.currTag == "v0.0.2" {
-	val, methodErr := merged.typ1.Foo(arg1, arg2, arg3)
+		val, methodErr := merged.typ1.Foo(arg1, arg2, arg3)
 
 		if err != nil {
 			err = methodErr
@@ -146,7 +168,7 @@ func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3
 	}
 
 	if merged.currTag == "v0.0.3" {
-	val, methodErr := merged.typ2.Foo(arg2, arg3Alt2)
+		val, methodErr := merged.typ2.Foo(arg2, arg3Alt2)
 
 		if err != nil {
 			err = methodErr
@@ -178,7 +200,7 @@ func (merged *Impl) Bar(arg1 chan *string, arg1Alt4 map[string]interface{}) (err
 
 
 	if merged.currTag == "v0.0.1" {
-	merged.typ0.Bar(arg1)
+		merged.typ0.Bar(arg1)
 
 
 
@@ -187,7 +209,7 @@ func (merged *Impl) Bar(arg1 chan *string, arg1Alt4 map[string]interface{}) (err
 	}
 
 	if merged.currTag == "v0.0.3" {
-	methodErr := merged.typ2.Bar(arg1Alt4)
+		methodErr := merged.typ2.Bar(arg1Alt4)
 
 		if err != nil {
 			err = methodErr
@@ -217,7 +239,7 @@ func (merged *Impl) SingleReturnVal(arg string) (retVal int, err error) {
 
 
 	if merged.currTag == "v0.0.1" {
-	val, methodErr := merged.typ0.SingleReturnVal()
+		val, methodErr := merged.typ0.SingleReturnVal()
 
 		if err != nil {
 			err = methodErr
@@ -230,7 +252,7 @@ func (merged *Impl) SingleReturnVal(arg string) (retVal int, err error) {
 	}
 
 	if merged.currTag == "v0.0.2" {
-	val, methodErr := merged.typ1.SingleReturnVal(arg)
+		val, methodErr := merged.typ1.SingleReturnVal(arg)
 
 		if err != nil {
 			err = methodErr
@@ -260,7 +282,7 @@ func (merged *Impl) NoReturnVal(arg int) (err error) {
 
 
 	if merged.currTag == "v0.0.2" {
-	methodErr := merged.typ1.NoReturnVal()
+		methodErr := merged.typ1.NoReturnVal()
 
 		if err != nil {
 			err = methodErr
@@ -273,7 +295,7 @@ func (merged *Impl) NoReturnVal(arg int) (err error) {
 	}
 
 	if merged.currTag == "v0.0.3" {
-	methodErr := merged.typ2.NoReturnVal(arg)
+		methodErr := merged.typ2.NoReturnVal(arg)
 
 		if err != nil {
 			err = methodErr
@@ -303,7 +325,7 @@ func (merged *Impl) ArrayMethod(sli []*pkg3.Something, arr [32]*pkg3.Something) 
 
 
 	if merged.currTag == "v0.0.3" {
-	methodErr := merged.typ2.ArrayMethod(sli, arr)
+		methodErr := merged.typ2.ArrayMethod(sli, arr)
 
 		if err != nil {
 			err = methodErr
@@ -333,7 +355,7 @@ func (merged *Impl) ChanMethod(chan1 chan *pkg3.Something, chan2 <-chan *pkg3.So
 
 
 	if merged.currTag == "v0.0.3" {
-	methodErr := merged.typ2.ChanMethod(chan1, chan2, chan3)
+		methodErr := merged.typ2.ChanMethod(chan1, chan2, chan3)
 
 		if err != nil {
 			err = methodErr
@@ -363,7 +385,7 @@ func (merged *Impl) MapMethod(m map[string]*pkg3.Something) (err error) {
 
 
 	if merged.currTag == "v0.0.3" {
-	methodErr := merged.typ2.MapMethod(m)
+		methodErr := merged.typ2.MapMethod(m)
 
 		if err != nil {
 			err = methodErr
@@ -393,7 +415,7 @@ func (merged *Impl) FooBarBaz() (err error) {
 
 
 	if merged.currTag == "v0.0.3" {
-	merged.typ2.FooBarBaz()
+		merged.typ2.FooBarBaz()
 
 
 

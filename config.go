@@ -29,9 +29,10 @@ type Output struct {
 	Rewrite    rewrite.Rewriter `yaml:"rewrite"`
 	DefaultTag string           `yaml:"defaultTag"`
 
-	InitArgs []*Field  `yaml:"-"`
-	Methods  []*Method `yaml:"-"`
-	Imports  []string  `yaml:"-"`
+	KnownTags []string  `yaml:"-"`
+	InitArgs  []*Field  `yaml:"-"`
+	Methods   []*Method `yaml:"-"`
+	Imports   []string  `yaml:"-"`
 }
 
 type Field struct {

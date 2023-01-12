@@ -28,9 +28,19 @@ func Run(configPath string) (*MergeConfig, []byte, error) {
 		return &config, nil, err
 	}
 
-	// fix package source dirs relative to the config path
 	for _, source := range config.Sources {
+		// fix package source dirs relative to the config path
 		source.Package.SourceDir = utils.RelativePath(configPath, source.Package.SourceDir)
+		// update known tags
+		config.Output.KnownTags = append(config.Output.KnownTags, source.Tag)
+	}
+
+	// find default tag from first source if default tag was not specified
+	if len(config.Output.DefaultTag) == 0 {
+		for _, source := range config.Sources {
+			config.Output.DefaultTag = source.Tag
+			break
+		}
 	}
 
 	b, err = Generate(&config)
