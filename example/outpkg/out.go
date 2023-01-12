@@ -65,8 +65,8 @@ func NewImpl(arg1 string, arg2 int, arg2Alt1 int64, arg3 *sync.WaitGroup, arg4 *
 	return &mergedType, nil
 }
 
-// IsKnownTag tells if given tag is a known tag.
-func IsKnownTag(tag string) bool {
+// IsKnownTagForImpl tells if given tag is a known tag.
+func IsKnownTagForImpl(tag string) bool {
 
 	if tag == "v0.0.1" {
 		return true
@@ -90,7 +90,7 @@ func (merged *Impl) Use(tag string) (changed bool) {
 		defer merged.mu.Unlock()
 	}
 	// use the default tag if the provided tag is unknown
-	if !IsKnownTag(tag) {
+	if !IsKnownTagForImpl(tag) {
 		tag = "v0.0.3"
 	}
 	changed = merged.currTag != tag

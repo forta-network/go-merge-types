@@ -46,8 +46,8 @@ func New{{.Output.Type}}({{range $index, $arg := .Output.InitArgs}}{{if eq $inde
 	return &mergedType, nil
 }
 
-// IsKnownTag tells if given tag is a known tag.
-func IsKnownTag(tag string) bool {
+// IsKnownTagFor{{.Output.Type}} tells if given tag is a known tag.
+func IsKnownTagFor{{.Output.Type}}(tag string) bool {
 {{range $tag := .Output.KnownTags}}
 	if tag == "{{$tag}}" {
 		return true
@@ -63,7 +63,7 @@ func (merged *{{.Output.Type}}) Use(tag string) (changed bool) {
 		defer merged.mu.Unlock()
 	}
 	// use the default tag if the provided tag is unknown
-	if !IsKnownTag(tag) {
+	if !IsKnownTagFor{{.Output.Type}}(tag) {
 		tag = "{{.Output.DefaultTag}}"
 	}
 	changed = merged.currTag != tag
