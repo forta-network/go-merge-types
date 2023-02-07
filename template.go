@@ -105,7 +105,7 @@ func (merged *{{$.Output.Type}}) {{$method.Name}}({{range $index, $arg := $metho
 	if merged.currTag == "{{$variation.Tag}}" {
 		{{if $variation.NoReturn}}{{else}}{{if $variation.OnlyError}}methodErr := {{else}}val, methodErr := {{end}}{{end}}merged.typ{{$variation.SourceIndex}}.{{$variation.Name}}({{range $index, $arg := $variation.Args}}{{if eq $index 0}}{{else}}, {{end}}{{$arg.Name}}{{end}})
 {{if eq $variation.NoReturn false}}
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}{{end}}

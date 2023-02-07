@@ -138,7 +138,7 @@ func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3
 	if merged.currTag == "v0.0.1" {
 		val, methodErr := merged.typ0.Foo(arg1)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -155,7 +155,7 @@ func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3
 	if merged.currTag == "v0.0.2" {
 		val, methodErr := merged.typ1.Foo(arg1, arg2, arg3)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -170,7 +170,7 @@ func (merged *Impl) Foo(arg1 string, arg2 int, arg3 map[string]interface{}, arg3
 	if merged.currTag == "v0.0.3" {
 		val, methodErr := merged.typ2.Foo(arg2, arg3Alt2)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -211,7 +211,7 @@ func (merged *Impl) Bar(arg1 chan *string, arg1Alt4 map[string]interface{}) (err
 	if merged.currTag == "v0.0.3" {
 		methodErr := merged.typ2.Bar(arg1Alt4)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -241,7 +241,7 @@ func (merged *Impl) SingleReturnVal(arg string) (retVal int, err error) {
 	if merged.currTag == "v0.0.1" {
 		val, methodErr := merged.typ0.SingleReturnVal()
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -254,7 +254,7 @@ func (merged *Impl) SingleReturnVal(arg string) (retVal int, err error) {
 	if merged.currTag == "v0.0.2" {
 		val, methodErr := merged.typ1.SingleReturnVal(arg)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -284,7 +284,7 @@ func (merged *Impl) NoReturnVal(arg int) (err error) {
 	if merged.currTag == "v0.0.2" {
 		methodErr := merged.typ1.NoReturnVal()
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -297,7 +297,7 @@ func (merged *Impl) NoReturnVal(arg int) (err error) {
 	if merged.currTag == "v0.0.3" {
 		methodErr := merged.typ2.NoReturnVal(arg)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -327,7 +327,7 @@ func (merged *Impl) ArrayMethod(sli []*pkg3.Something, arr [32]*pkg3.Something) 
 	if merged.currTag == "v0.0.3" {
 		methodErr := merged.typ2.ArrayMethod(sli, arr)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -357,7 +357,7 @@ func (merged *Impl) ChanMethod(chan1 chan *pkg3.Something, chan2 <-chan *pkg3.So
 	if merged.currTag == "v0.0.3" {
 		methodErr := merged.typ2.ChanMethod(chan1, chan2, chan3)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
@@ -387,7 +387,7 @@ func (merged *Impl) MapMethod(m map[string]*pkg3.Something) (err error) {
 	if merged.currTag == "v0.0.3" {
 		methodErr := merged.typ2.MapMethod(m)
 
-		if err != nil {
+		if methodErr != nil {
 			err = methodErr
 			return
 		}
